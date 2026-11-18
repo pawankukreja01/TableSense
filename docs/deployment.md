@@ -1,0 +1,12 @@
+# Deployment and recovery
+Local Compose serves the built Vue assets and Django from one app container plus PostgreSQL. Local demo credentials (demo-owner / demo-staff and bistro-demo) are for a private demonstration.
+
+For a real pilot, start with a fresh PostgreSQL database and secrets. Disable DEMO_MODE, enable PRODUCTION=1, set a randomly generated SECRET_KEY (at least 40 characters), a strong POSTGRES_PASSWORD and narrow ALLOWED_HOSTS. Remove any existing demo accounts before exposing a previously seeded database. Provision personal staff accounts. Use HTTPS on a same-origin reverse proxy, restrict direct backend access, and prevent public database access. Set the trusted proxy configuration for the deployment, including correct HTTPS origin handling for CSRF. Disable buffering on /api/display/updates. Make no credentials or tokens part of URLs, logs or static bundles. Use the built-in demo convenience link only locally; pair real tablets using the entry screen.
+
+Run migrations once before scaling app instances. Monitor /api/health, request latency, 4xx/5xx, heartbeat and offline incidents. Exercise the expected number of devices and concurrent staff before relying on a shift. The SSE service consumes a server thread per active connection. The Compose configuration uses two threaded workers. For larger fleets move fan-out to an async server and add shared rate limiting. The default per-process throttle is for the pilot.
+
+Back up using pg_dump with restricted encrypted storage. Restore a backup to a separate database and test login, authorization, table assignment and session reset before relying on it. Retain only anonymous data required for the agreed pilot analysis. Agree the retention period with the venue, export aggregate results, then remove expired closed visits (dependent per-session records cascade) and separately expire device-only events. Do not log guest identities or put personal details in staff issue reports.
+
+The local launcher only binds to the same computer. A separate phone/tablet requires a deployed HTTPS host reachable by all devices. The localhost display window provides a physical-device-free demo.
+
+For a proxy that overwrites X-Forwarded-Proto and blocks direct upstream connections, set TRUST_HTTPS_PROXY=1. The loopback-only health check requires 127.0.0.1 in ALLOWED_HOSTS. Use the public certificate-protected hostname on all tablets. Open sessions expire after 12 hours when the display or floor refreshes. Staff should still explicitly close each party’s visit.
